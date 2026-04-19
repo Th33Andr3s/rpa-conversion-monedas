@@ -1,0 +1,57 @@
+<Activity x:Class="GetConversionRate" xmlns="http://schemas.microsoft.com/netfx/2009/xaml/activities" xmlns:s="clr-namespace:System;assembly=System.Private.CoreLib" xmlns:sco="clr-namespace:System.Collections.ObjectModel;assembly=System.Private.CoreLib" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <x:Members>
+    <x:Property Name="in_FromCurrency" Type="InArgument(x:String)" />
+    <x:Property Name="in_ToCurrency" Type="InArgument(x:String)" />
+    <x:Property Name="in_Amount" Type="InArgument(x:Double)" />
+    <x:Property Name="out_ExchangeRate" Type="OutArgument(x:Double)" />
+    <x:Property Name="out_Converted" Type="OutArgument(x:Double)" />
+  </x:Members>
+  <TextExpression.NamespacesForImplementation>
+    <sco:Collection x:TypeArguments="x:String">
+      <x:String>System</x:String>
+      <x:String>System.Collections.Generic</x:String>
+      <x:String>System.Collections.ObjectModel</x:String>
+      <x:String>System.Linq</x:String>
+    </sco:Collection>
+  </TextExpression.NamespacesForImplementation>
+  <TextExpression.ReferencesForImplementation>
+    <sco:Collection x:TypeArguments="AssemblyReference">
+      <AssemblyReference>System.Activities</AssemblyReference>
+      <AssemblyReference>System.Collections</AssemblyReference>
+      <AssemblyReference>System.ComponentModel.TypeConverter</AssemblyReference>
+      <AssemblyReference>System.Linq</AssemblyReference>
+      <AssemblyReference>System.Memory</AssemblyReference>
+      <AssemblyReference>System.Net.WebClient</AssemblyReference>
+      <AssemblyReference>System.ObjectModel</AssemblyReference>
+      <AssemblyReference>System.Private.CoreLib</AssemblyReference>
+      <AssemblyReference>System.Private.Uri</AssemblyReference>
+      <AssemblyReference>System.Text.Json</AssemblyReference>
+    </sco:Collection>
+  </TextExpression.ReferencesForImplementation>
+  <Sequence DisplayName="GetConversionRate">
+    <Sequence.Variables>
+      <Variable x:TypeArguments="x:String" Default="[String.Empty]" Name="apiUrl" />
+      <Variable x:TypeArguments="x:String" Default="[String.Empty]" Name="responseBody" />
+    </Sequence.Variables>
+    <TryCatch DisplayName="TryCatch">
+      <TryCatch.Try>
+        <Sequence DisplayName="Consulta API">
+          <Assign x:TypeArguments="x:String" DisplayName="Construir URL" To="[apiUrl]" Value="[&quot;https://open.er-api.com/v6/latest/&quot; &amp; in_FromCurrency.ToUpper().Trim()]" />
+          <Assign x:TypeArguments="x:String" DisplayName="Llamar API" To="[responseBody]" Value="[(New System.Net.WebClient()).DownloadString(apiUrl)]" />
+          <Assign x:TypeArguments="x:Double" DisplayName="Obtener Tasa" To="[out_ExchangeRate]" Value="[System.Text.Json.JsonDocument.Parse(responseBody).RootElement.GetProperty(&quot;rates&quot;).GetProperty(in_ToCurrency.ToUpper().Trim()).GetDouble()]" />
+          <Assign x:TypeArguments="x:Double" DisplayName="Calcular Conversion" To="[out_Converted]" Value="[Math.Round(in_Amount * out_ExchangeRate, 4)]" />
+        </Sequence>
+      </TryCatch.Try>
+      <TryCatch.Catches>
+        <Catch x:TypeArguments="s:Exception">
+          <ActivityAction x:TypeArguments="s:Exception">
+            <ActivityAction.Argument>
+              <DelegateInArgument x:TypeArguments="s:Exception" Name="ex" />
+            </ActivityAction.Argument>
+            <Throw DisplayName="Re-lanzar Excepcion" Exception="[New System.Exception(&quot;GetConversionRate: &quot; &amp; ex.Message, ex)]" />
+          </ActivityAction>
+        </Catch>
+      </TryCatch.Catches>
+    </TryCatch>
+  </Sequence>
+</Activity>

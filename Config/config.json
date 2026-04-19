@@ -1,0 +1,34 @@
+{
+  "_comment": "Configuración del proyecto CurrencyConverter v1.0",
+  "API": {
+    "BaseUrl": "https://open.er-api.com/v6/latest/",
+    "TimeoutSeconds": 30,
+    "FreeEndpoint": true,
+    "RequiresApiKey": false,
+    "Documentation": "https://www.exchangerate-api.com/docs/free"
+  },
+  "UI": {
+    "AppTitle": "💱 Conversor de Monedas - SENA AA2-EV01",
+    "DefaultFromCurrency": "USD",
+    "DefaultToCurrency": "COP"
+  },
+  "SupportedCurrencies": {
+    "note": "Referencia de códigos ISO 4217 más comunes",
+    "codes": [
+      "USD - Dólar estadounidense",
+      "EUR - Euro",
+      "COP - Peso colombiano",
+      "GBP - Libra esterlina",
+      "BRL - Real brasileño",
+      "MXN - Peso mexicano",
+      "JPY - Yen japonés",
+      "CAD - Dólar canadiense",
+      "CHF - Franco suizo",
+      "ARS - Peso argentino",
+      "PEN - Sol peruano",
+      "CLP - Peso chileno",
+      "AUD - Dólar australiano",
+      "CNY - Yuan chino"
+    ]
+  }
+}

@@ -1,0 +1,6 @@
+{
+  "Name": "Automatizacion Monedas",
+  "ProjectType": "Process",
+  "Description": "Automatización para la conversión de diferentes tipos de monedas",
+  "MainFile": "Main.xaml"
+}

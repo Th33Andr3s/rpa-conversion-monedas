@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Activity mc:Ignorable="sap2010"
+    x:Class="Main"
+    xmlns="http://schemas.microsoft.com/netfx/2009/xaml/activities"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:sap2010="http://schemas.microsoft.com/netfx/2010/xaml/activities/presentation"
+    xmlns:sys="clr-namespace:System;assembly=mscorlib"
+    xmlns:ui="http://schemas.uipath.com/workflow/activities"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+  <Sequence DisplayName="Main - CurrencyConverter">
+
+    <Sequence.Variables>
+      <Variable x:TypeArguments="x:String"  Name="fromCurrency"    Default="[String.Empty]" />
+      <Variable x:TypeArguments="x:String"  Name="toCurrency"      Default="[String.Empty]" />
+      <Variable x:TypeArguments="x:String"  Name="amountStr"       Default="[String.Empty]" />
+      <Variable x:TypeArguments="x:Double"  Name="amount"          Default="[0D]" />
+      <Variable x:TypeArguments="x:String"  Name="apiUrl"          Default="[String.Empty]" />
+      <Variable x:TypeArguments="x:String"  Name="responseBody"    Default="[String.Empty]" />
+      <Variable x:TypeArguments="x:Double"  Name="exchangeRate"    Default="[0D]" />
+      <Variable x:TypeArguments="x:Double"  Name="convertedAmount" Default="[0D]" />
+      <Variable x:TypeArguments="x:String"  Name="resultMessage"   Default="[String.Empty]" />
+      <Variable x:TypeArguments="x:Boolean" Name="continueLoop"    Default="[True]" />
+      <Variable x:TypeArguments="x:String"  Name="selectedButton"  Default="[String.Empty]" />
+    </Sequence.Variables>
+
+    <!-- Condition como atributo: UiPath convierte "[expr]" a Activity<bool> via su TypeConverter -->
+    <While DisplayName="Loop Principal" Condition="[continueLoop]">
+
+      <TryCatch DisplayName="TryCatch Conversion">
+        <TryCatch.Try>
+          <Sequence DisplayName="Proceso de Conversion">
+
+            <!-- ENTRADAS -->
+            <ui:InputDialog DisplayName="Moneda Origen"
+                Title="Conversor de Monedas"
+                Label="Ingrese la moneda de ORIGEN (ej: USD, EUR, COP):"
+                Result="[fromCurrency]" />
+
+            <ui:InputDialog DisplayName="Moneda Destino"
+                Title="Conversor de Monedas"
+                Label="Ingrese la moneda de DESTINO (ej: USD, EUR, COP):"
+                Result="[toCurrency]" />
+
+            <ui:InputDialog DisplayName="Cantidad"
+                Title="Conversor de Monedas"
+                Label="Ingrese la cantidad a convertir:"
+                Result="[amountStr]" />
+
+            <!-- VALIDACION: atributo Condition para If -->
+            <If DisplayName="Validar Campos"
+                Condition="[String.IsNullOrWhiteSpace(fromCurrency) OrElse String.IsNullOrWhiteSpace(toCurrency) OrElse String.IsNullOrWhiteSpace(amountStr)]">
+              <If.Then>
+                <Throw DisplayName="Error Campos Vacios">
+                  <Throw.Exception>
+                    <InArgument x:TypeArguments="sys:Exception">[New System.Exception("Todos los campos son obligatorios.")]</InArgument>
+                  </Throw.Exception>
+                </Throw>
+              </If.Then>
+            </If>
+
+            <!-- PROCESAMIENTO: Assign shorthand con x:TypeArguments -->
+            <Assign x:TypeArguments="x:Double" DisplayName="Parsear Monto"
+                    To="[amount]"
+                    Value="[CDbl(amountStr.Trim().Replace(&quot;,&quot;, &quot;.&quot;))]" />
+
+            <Assign x:TypeArguments="x:String" DisplayName="Construir URL"
+                    To="[apiUrl]"
+                    Value="[&quot;https://open.er-api.com/v6/latest/&quot; &amp; fromCurrency.ToUpper().Trim()]" />
+
+            <Assign x:TypeArguments="x:String" DisplayName="Llamar API"
+                    To="[responseBody]"
+                    Value="[(New System.Net.WebClient()).DownloadString(apiUrl)]" />
+
+            <Assign x:TypeArguments="x:Double" DisplayName="Obtener Tasa"
+                    To="[exchangeRate]"
+                    Value="[System.Text.Json.JsonDocument.Parse(responseBody).RootElement.GetProperty(&quot;rates&quot;).GetProperty(toCurrency.ToUpper().Trim()).GetDouble()]" />
+
+            <Assign x:TypeArguments="x:Double" DisplayName="Calcular Resultado"
+                    To="[convertedAmount]"
+                    Value="[Math.Round(amount * exchangeRate, 4)]" />
+
+            <Assign x:TypeArguments="x:String" DisplayName="Preparar Mensaje"
+                    To="[resultMessage]"
+                    Value="[String.Format(&quot;RESULTADO:{0}{1} {2}  =  {3} {4}{0}{0}Tasa: 1 {2} = {5} {4}&quot;, Environment.NewLine, amount, fromCurrency.ToUpper().Trim(), convertedAmount, toCurrency.ToUpper().Trim(), exchangeRate)]" />
+
+            <!-- SALIDA: Text como atributo evita el conflicto InArgument<String> vs InArgument<Object> -->
+            <ui:MessageBox DisplayName="Mostrar Resultado"
+                Caption="Conversion Exitosa"
+                Text="[resultMessage]" />
+
+            <ui:MessageBox DisplayName="Otra Conversion"
+                Caption="Conversor de Monedas"
+                Text="Desea realizar otra conversion?"
+                Buttons="YesNo"
+                ChosenButton="[selectedButton]" />
+
+            <Assign x:TypeArguments="x:Boolean" DisplayName="Actualizar Loop"
+                    To="[continueLoop]"
+                    Value="[selectedButton = &quot;Yes&quot;]" />
+
+          </Sequence>
+        </TryCatch.Try>
+
+        <TryCatch.Catches>
+          <Catch x:TypeArguments="sys:Exception">
+            <ActivityAction x:TypeArguments="sys:Exception">
+              <ActivityAction.Argument>
+                <DelegateInArgument x:TypeArguments="sys:Exception" Name="ex" />
+              </ActivityAction.Argument>
+              <Sequence DisplayName="Manejo de Error">
+                <ui:MessageBox DisplayName="Mostrar Error"
+                    Caption="Error"
+                    Text="[&quot;Error: &quot; &amp; ex.Message]" />
+                <Assign x:TypeArguments="x:Boolean" DisplayName="Detener Loop"
+                        To="[continueLoop]"
+                        Value="[False]" />
+              </Sequence>
+            </ActivityAction>
+          </Catch>
+        </TryCatch.Catches>
+      </TryCatch>
+
+    </While>
+  </Sequence>
+</Activity>
